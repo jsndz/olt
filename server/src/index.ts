@@ -2,17 +2,21 @@ import Anthropic from "@anthropic-ai/sdk";
 import express from "express";
 import cors from "cors";
 
+import { PORT, ANTHROPIC_API_KEY } from "./config";
 import { basePrompt as HTMLPrompt } from "./templates/html";
 
 import { BASE_PROMPT, getSystemPrompt } from "./defaults/prompts";
 import { TextBlock } from "@anthropic-ai/sdk/resources";
 
+const anthropic = new Anthropic({
+  apiKey: ANTHROPIC_API_KEY,
+});
+
 const app = express();
 app.use(express.json());
 app.use(cors());
-const anthropic = new Anthropic();
 
-app.use("/template", async (req, res) => {
+app.post("/template", async (req, res) => {
   const prompt = req.body.prompt;
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022",
@@ -41,24 +45,21 @@ app.use("/template", async (req, res) => {
   return;
 });
 
-app.listen(3000, () => {
-  console.log("server started at 3000");
+app.post("/chat", async (req, res) => {
+  const messages = req.body.messages;
+  const response = await anthropic.messages.create({
+    messages: messages,
+    model: "claude-3-5-sonnet-20241022",
+    max_tokens: 8000,
+    system: getSystemPrompt(),
+  });
+
+  console.log(response);
+
+  res.json({
+    response: (response.content[0] as TextBlock)?.text,
+  });
 });
-
-// async function main() {
-//   anthropic.messages
-//     .stream({
-//       model: "claude-3-5-sonnet-20241022",
-//       max_tokens: 8192,
-//       temperature: 1,
-//       messages: [
-//         { role: "user", content: "Html page to display baby no money" },
-//       ],
-//       system: getSystemPrompt(),
-//     })
-//     .on("text", (text) => {
-//       log(text);
-//     });
-// }
-
-// main();
+app.listen(PORT, () => {
+  console.log(`server started at ${PORT}`);
+});
