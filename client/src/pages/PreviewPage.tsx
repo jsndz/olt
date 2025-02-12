@@ -1,29 +1,29 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { FileStructure } from '../types';
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { FileItem } from "../types";
 
 const PreviewPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const files = location.state?.files as FileStructure[];
+  const files = location.state?.files as FileItem[];
 
   // Find HTML and CSS content
-  const findFileContent = (files: FileStructure[], fileName: string): string => {
+  const findFileContent = (files: FileItem[], fileName: string): string => {
     for (const file of files) {
-      if (file.type === 'file' && file.name === fileName) {
-        return file.content;
+      if (file.type === "file" && file.name === fileName) {
+        return file.content!;
       }
       if (file.children) {
         const content = findFileContent(file.children, fileName);
         if (content) return content;
       }
     }
-    return '';
+    return "";
   };
 
-  const htmlContent = findFileContent(files || [], 'index.html');
-  const cssContent = findFileContent(files || [], 'styles.css');
+  const htmlContent = findFileContent(files || [], "index.html");
+  const cssContent = findFileContent(files || [], "styles.css");
 
   // Combine HTML and CSS
   const combinedContent = `
@@ -36,7 +36,7 @@ const PreviewPage: React.FC = () => {
       <div className="bg-gray-800 text-white p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/editor', { state: location.state })}
+            onClick={() => navigate("/editor", { state: location.state })}
             className="flex items-center gap-2 hover:text-gray-300"
           >
             <ArrowLeft size={16} />
@@ -46,7 +46,7 @@ const PreviewPage: React.FC = () => {
           <h1 className="text-xl font-semibold">Preview</h1>
         </div>
       </div>
-      
+
       <div className="flex-1 bg-gray-100 p-4">
         <div className="bg-white rounded-lg shadow-lg h-full overflow-hidden flex flex-col">
           {/* Preview Header */}
@@ -58,7 +58,7 @@ const PreviewPage: React.FC = () => {
             </div>
             <div className="text-sm text-gray-500">Preview</div>
           </div>
-          
+
           {/* Preview Content */}
           <div className="flex-1 overflow-auto">
             <iframe

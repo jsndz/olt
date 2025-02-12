@@ -5,6 +5,7 @@ export enum StepType {
   DeleteFile,
   RunScript,
 }
+
 export interface Step {
   id: number;
   title: string;
@@ -15,6 +16,11 @@ export interface Step {
   path?: string;
 }
 
+export interface Project {
+  prompt: string;
+  steps: Step[];
+}
+
 export interface FileItem {
   name: string;
   type: "file" | "folder";
@@ -23,7 +29,7 @@ export interface FileItem {
   path: string;
 }
 
-export interface GeneratedFile {
-  path: string;
-  content: string;
+export interface FileViewerProps {
+  file: FileItem | null;
+  onClose: () => void;
 }

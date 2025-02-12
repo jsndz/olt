@@ -6,13 +6,14 @@ import FileExplorer from "../components/FileExplorer";
 import { Play, Save, Terminal, ChevronDown, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { parseXml } from "../parse";
+import { useWebContainer } from "../hooks";
 
 const EditorPage: React.FC = () => {
   const SERVER_URL =
     import.meta.env.VITE_STATE === "production"
       ? import.meta.env.VITE_SERVER_URL_PROD
       : import.meta.env.VITE_SERVER_URL_DEV;
-
+  const webcontainer = useWebContainer();
   const location = useLocation();
   const navigate = useNavigate();
   const prompt = location.state?.prompt || "";
@@ -29,14 +30,14 @@ const EditorPage: React.FC = () => {
         {
           name: "index.html",
           type: "file",
-          path: "/src",
+          path: "/src/index.html",
           content:
             "<!DOCTYPE html>\n<html>\n  <head>\n    <title>My Website</title>\n  </head>\n  <body>\n    <h1>Hello World</h1>\n  </body>\n</html>",
         },
         {
           name: "styles.css",
           type: "file",
-          path: "/src",
+          path: "/src/style.css",
           content:
             "body {\n  margin: 0;\n  padding: 0;\n  font-family: sans-serif;\n}",
         },
@@ -49,23 +50,28 @@ const EditorPage: React.FC = () => {
     let updateHappened = false;
     steps
       .filter(({ status }) => status === "pending")
+      //gets the steps with pending state
       .map((step) => {
         updateHappened = true;
         if (step?.type === StepType.CreateFile) {
           let parsedPath = step.path?.split("/") ?? [];
+          //["app.js","index.html","src"]
           let currentFileStructure = [...originalFiles];
           let finalAnswerRef = currentFileStructure;
 
           let currentFolder = "";
           while (parsedPath.length) {
+            // the path is not empty or not the final file
             currentFolder = `${currentFolder}/${parsedPath[0]}`;
             let currentFolderName = parsedPath[0];
             parsedPath = parsedPath.slice(1);
-
+            //get the first file/folder
             if (!parsedPath.length) {
+              //if it is  the last file
               let file = currentFileStructure.find(
                 (x) => x.path === currentFolder
               );
+              //try to find the file
               if (!file) {
                 currentFileStructure.push({
                   name: currentFolderName,
@@ -73,14 +79,19 @@ const EditorPage: React.FC = () => {
                   path: currentFolder,
                   content: step.code,
                 });
+                //create if file doesnt exist
               } else {
                 file.content = step.code;
+                //update content
               }
             } else {
+              //if it is not the last file
               let folder = currentFileStructure.find(
                 (x) => x.path === currentFolder
               );
+              //find the folder
               if (!folder) {
+                //create
                 currentFileStructure.push({
                   name: currentFolderName,
                   type: "folder",
@@ -88,7 +99,7 @@ const EditorPage: React.FC = () => {
                   children: [],
                 });
               }
-
+              //move to the children
               currentFileStructure = currentFileStructure.find(
                 (x) => x.path === currentFolder
               )!.children!;
@@ -99,6 +110,7 @@ const EditorPage: React.FC = () => {
       });
 
     if (updateHappened) {
+      // if updated change status
       setFiles(originalFiles);
       setSteps((steps) =>
         steps.map((s: Step) => {
@@ -110,6 +122,62 @@ const EditorPage: React.FC = () => {
       );
     }
   }, [steps, files]);
+
+  useEffect(() => {
+    const createMountStructure = (files: FileItem[]): Record<string, any> => {
+      const mountStructure: Record<string, any> = {};
+
+      const processFile = (file: FileItem, isRootFolder: boolean) => {
+        if (file.type === "folder") {
+          // For folders, create a directory entry
+          mountStructure[file.name] = {
+            // give file.name as a Record key
+            // if it has a children add children
+            // else init {}
+            directory: file.children
+              ? Object.fromEntries(
+                  file.children.map((child) => [
+                    child.name,
+                    processFile(child, false),
+                  ])
+                )
+              : {},
+          };
+        } else if (file.type === "file") {
+          //if it is a root folder
+
+          if (isRootFolder) {
+            //update
+            mountStructure[file.name] = {
+              file: {
+                contents: file.content || "",
+              },
+            };
+          } else {
+            //  create a file entry with contents
+            return {
+              file: {
+                contents: file.content || "",
+              },
+            };
+          }
+        }
+
+        return mountStructure[file.name];
+      };
+
+      // Process each top-level file/folder
+      files.forEach((file) => processFile(file, true));
+
+      return mountStructure;
+    };
+
+    const mountStructure = createMountStructure(files);
+
+    // Mount the structure if WebContainer is available
+    console.log(mountStructure);
+    webcontainer?.mount(mountStructure);
+  }, [files, webcontainer]);
 
   const handleFileSelect = (file: FileItem) => {
     if (file.type === "file") {
