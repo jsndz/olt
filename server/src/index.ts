@@ -26,7 +26,7 @@ app.post("/template", async (req, res) => {
     system:
       "Return either 'html' or 'complex' based on the project's complexity. If the project consists of simple HTML, CSS, and JavaScript, return 'html'. If it involves advanced functionality, frameworks, or backend logic, return 'complex'. Do not return anything extra.",
   });
-
+  console.log(response.content);
   const answer = (response.content[0] as TextBlock).text;
 
   if (answer == "html") {
@@ -37,6 +37,7 @@ app.post("/template", async (req, res) => {
       ],
       uiPrompts: [HTMLPrompt],
     });
+
     return;
   }
   res.status(400).json({

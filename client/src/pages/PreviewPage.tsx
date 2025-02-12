@@ -2,11 +2,14 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { FileItem } from "../types";
+import { PreviewFrame } from "../components/PreviewFrames";
+import { useWebContainer } from "../hooks";
 
 const PreviewPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const files = location.state?.files as FileItem[];
+  const webcontainer = useWebContainer();
 
   // Find HTML and CSS content
   const findFileContent = (files: FileItem[], fileName: string): string => {
@@ -60,14 +63,7 @@ const PreviewPage: React.FC = () => {
           </div>
 
           {/* Preview Content */}
-          <div className="flex-1 overflow-auto">
-            <iframe
-              srcDoc={combinedContent}
-              title="Preview"
-              className="w-full h-full border-0"
-              sandbox="allow-scripts"
-            />
-          </div>
+          <PreviewFrame webContainer={webcontainer!} files={files} />
         </div>
       </div>
     </div>

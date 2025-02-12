@@ -7,6 +7,7 @@ import { Play, Save, Terminal, ChevronDown, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { parseXml } from "../parse";
 import { useWebContainer } from "../hooks";
+import { StepsList } from "../components/StepList";
 
 const EditorPage: React.FC = () => {
   const SERVER_URL =
@@ -15,11 +16,19 @@ const EditorPage: React.FC = () => {
       : import.meta.env.VITE_SERVER_URL_DEV;
   const webcontainer = useWebContainer();
   const location = useLocation();
+
   const navigate = useNavigate();
-  const prompt = location.state?.prompt || "";
+  const [userPrompt, setPrompt] = useState("");
+
+  const { prompt } = location.state as { prompt: string };
   const [steps, setSteps] = useState<Step[]>([]);
+  const [currentStep, setCurrentStep] = useState(1);
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [llmMessages, setLlmMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+
   const [files, setFiles] = useState<FileItem[]>([
     {
       name: "src",
@@ -234,6 +243,16 @@ const EditorPage: React.FC = () => {
         status: "pending" as "pending",
       })),
     ]);
+    setLlmMessages(
+      [...prompts, prompt].map((content) => ({
+        role: "user",
+        content,
+      }))
+    );
+    setLlmMessages((x) => [
+      ...x,
+      { role: "assistant", content: stepsResponse.data.response },
+    ]);
     useEffect(() => {
       init();
     }, []);
@@ -282,53 +301,67 @@ const EditorPage: React.FC = () => {
             </button>
 
             {showInstructions && (
-              <div className="p-4 space-y-4 text-sm">
+              <div className="col-span-1 space-y-6 overflow-auto">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    1. Create Project
-                  </h3>
-                  <div className="bg-gray-800 text-gray-200 p-2 rounded text-xs font-mono">
-                    mkdir my-website && cd my-website
+                  <div className="max-h-[75vh] overflow-scroll">
+                    <StepsList
+                      steps={steps}
+                      currentStep={currentStep}
+                      onStepClick={setCurrentStep}
+                    />
                   </div>
-                </div>
+                  <div>
+                    <div className="flex">
+                      <br />
+                      {
+                        <div className="flex">
+                          <textarea
+                            value={userPrompt}
+                            onChange={(e) => {
+                              setPrompt(e.target.value);
+                            }}
+                            className="p-2 w-full"
+                          ></textarea>
+                          <button
+                            onClick={async () => {
+                              const newMessage = {
+                                role: "user" as "user",
+                                content: userPrompt,
+                              };
 
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    2. Initialize Project
-                  </h3>
-                  <div className="bg-gray-800 text-gray-200 p-2 rounded text-xs font-mono">
-                    npm init -y
-                  </div>
-                </div>
+                              const stepsResponse = await axios.post(
+                                `${SERVER_URL}/chat`,
+                                {
+                                  messages: [...llmMessages, newMessage],
+                                }
+                              );
 
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    3. Create Files
-                  </h3>
-                  <p className="text-gray-600 mb-2">
-                    Create the following files with the content from the editor:
-                  </p>
-                  <ul className="list-disc list-inside text-gray-600">
-                    <li>src/index.html</li>
-                    <li>src/styles.css</li>
-                  </ul>
-                </div>
+                              setLlmMessages((x) => [...x, newMessage]);
+                              setLlmMessages((x) => [
+                                ...x,
+                                {
+                                  role: "assistant",
+                                  content: stepsResponse.data.response,
+                                },
+                              ]);
 
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    4. Install Dependencies
-                  </h3>
-                  <div className="bg-gray-800 text-gray-200 p-2 rounded text-xs font-mono">
-                    npm install vite
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    5. Start Development Server
-                  </h3>
-                  <div className="bg-gray-800 text-gray-200 p-2 rounded text-xs font-mono">
-                    npx vite
+                              setSteps((s) => [
+                                ...s,
+                                ...parseXml(stepsResponse.data.response).map(
+                                  (x) => ({
+                                    ...x,
+                                    status: "pending" as "pending",
+                                  })
+                                ),
+                              ]);
+                            }}
+                            className="bg-purple-400 px-4"
+                          >
+                            Send
+                          </button>
+                        </div>
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
