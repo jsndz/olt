@@ -8,6 +8,7 @@ import axios from "axios";
 import { parseXml } from "../parse";
 import { useWebContainer } from "../hooks";
 import { StepsList } from "../components/StepList";
+import { PreviewFrame } from "../components/PreviewFrames";
 
 const EditorPage: React.FC = () => {
   const SERVER_URL =
@@ -25,34 +26,12 @@ const EditorPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showInstructions, setShowInstructions] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [preview, setPreview] = useState<boolean>(false);
   const [llmMessages, setLlmMessages] = useState<
     { role: "user" | "assistant"; content: string }[]
   >([]);
 
-  const [files, setFiles] = useState<FileItem[]>([
-    {
-      name: "src",
-      type: "folder",
-      content: "",
-      path: "/",
-      children: [
-        {
-          name: "index.html",
-          type: "file",
-          path: "/src/index.html",
-          content:
-            "<!DOCTYPE html>\n<html>\n  <head>\n    <title>My Website</title>\n  </head>\n  <body>\n    <h1>Hello World</h1>\n  </body>\n</html>",
-        },
-        {
-          name: "styles.css",
-          type: "file",
-          path: "/src/style.css",
-          content:
-            "body {\n  margin: 0;\n  padding: 0;\n  font-family: sans-serif;\n}",
-        },
-      ],
-    },
-  ]);
+  const [files, setFiles] = useState<FileItem[]>([]);
 
   useEffect(() => {
     let originalFiles = [...files];
@@ -215,9 +194,12 @@ const EditorPage: React.FC = () => {
       setFiles(updateFileContent(files));
     }
   };
-
+  useEffect(() => {
+    init();
+  }, []);
   const handlePreview = () => {
-    navigate("/preview", { state: { ...location.state, files } });
+    // navigate("/preview", { state: { ...location.state, files } });
+    setPreview(true);
   };
   async function init() {
     const response = await axios.post(`${SERVER_URL}/template`, {
@@ -253,9 +235,6 @@ const EditorPage: React.FC = () => {
       ...x,
       { role: "assistant", content: stepsResponse.data.response },
     ]);
-    useEffect(() => {
-      init();
-    }, []);
   }
   return (
     <div className="h-screen flex flex-col">
@@ -393,6 +372,28 @@ const EditorPage: React.FC = () => {
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500">
               Select a file to edit
+            </div>
+          )}
+          {preview ? (
+            <div className="flex-1 bg-gray-100 p-4">
+              <div className="bg-white rounded-lg shadow-lg h-full overflow-hidden flex flex-col">
+                {/* Preview Header */}
+                <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                  </div>
+                  <div className="text-sm text-gray-500">Preview</div>
+                </div>
+
+                {/* Preview Content */}
+                <PreviewFrame webContainer={webcontainer!} files={files} />
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              wait{" "}
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
-import { WebContainer } from "@webcontainer/api";
 import { useEffect, useState } from "react";
+import { WebContainer } from "@webcontainer/api";
 
-export const useWebContainer = () => {
+export function useWebContainer() {
   const [webcontainer, setWebcontainer] = useState<WebContainer>();
 
   async function main() {
@@ -11,5 +11,6 @@ export const useWebContainer = () => {
   useEffect(() => {
     main();
   }, []);
+
   return webcontainer;
-};
+}

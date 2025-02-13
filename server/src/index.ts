@@ -17,6 +17,8 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/template", async (req, res) => {
+  console.log("Hi");
+
   const prompt = req.body.prompt;
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022",
@@ -24,12 +26,45 @@ app.post("/template", async (req, res) => {
     temperature: 1,
     messages: [{ role: "user", content: prompt }],
     system:
-      "Return either 'html' or 'complex' based on the project's complexity. If the project consists of simple HTML, CSS, and JavaScript, return 'html'. If it involves advanced functionality, frameworks, or backend logic, return 'complex'. Do not return anything extra.",
+      "Return either node or react or html based on what do you think this project should be. Only return a single word either 'node' or 'react'. Do not return anything extra",
   });
-  console.log(response.content);
-  const answer = (response.content[0] as TextBlock).text;
 
+  const answer = (response.content[0] as TextBlock).text;
+  console.log(answer);
   if (answer == "html") {
+    res.status(200).json({
+      prompts: [
+        BASE_PROMPT,
+        `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${HTMLPrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+      ],
+      uiPrompts: [HTMLPrompt],
+    });
+
+    return;
+  }
+  if (answer == "html") {
+    res.status(200).json({
+      prompts: [
+        BASE_PROMPT,
+        `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${HTMLPrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+      ],
+      uiPrompts: [HTMLPrompt],
+    });
+
+    return;
+  }
+  if (answer == "react") {
+    res.status(200).json({
+      prompts: [
+        BASE_PROMPT,
+        `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${HTMLPrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+      ],
+      uiPrompts: [HTMLPrompt],
+    });
+
+    return;
+  }
+  if (answer == "nodejs") {
     res.status(200).json({
       prompts: [
         BASE_PROMPT,

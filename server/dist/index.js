@@ -25,44 +25,46 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 app.post("/template", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const prompt = req.body.prompt;
-    const response = yield anthropic.messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 8192,
-        temperature: 1,
-        messages: [{ role: "user", content: prompt }],
-        system: "Return either 'html' or 'complex' based on the project's complexity. If the project consists of simple HTML, CSS, and JavaScript, return 'html'. If it involves advanced functionality, frameworks, or backend logic, return 'complex'. Do not return anything extra.",
+    // console.log("Hi");
+    // const prompt = req.body.prompt;
+    // const response = await anthropic.messages.create({
+    //   model: "claude-3-5-sonnet-20241022",
+    //   max_tokens: 8192,
+    //   temperature: 1,
+    //   messages: [{ role: "user", content: prompt }],
+    //   system:
+    //     "Return either 'html' or 'complex' based on the project's complexity. If the project consists of simple HTML, CSS, and JavaScript, return 'html'. If it involves advanced functionality, frameworks, or backend logic, return 'complex'. Do not return anything extra.",
+    // });
+    // const answer = (response.content[0] as TextBlock).text;
+    // console.log(answer);
+    // if (answer == "html") {
+    res.status(200).json({
+        prompts: [
+            prompts_1.BASE_PROMPT,
+            `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${html_1.basePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+        ],
+        uiPrompts: [html_1.basePrompt],
     });
-    const answer = response.content[0].text;
-    if (answer == "html") {
-        res.status(200).json({
-            prompts: [
-                prompts_1.BASE_PROMPT,
-                `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${html_1.basePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
-            ],
-            uiPrompts: [html_1.basePrompt],
-        });
-        return;
-    }
-    res.status(400).json({
-        message: "Too complex to be created in a HTML page",
-    });
-    return;
+    //   return;
+    // }
+    // res.status(400).json({
+    //   message: "Too complex to be created in a HTML page",
+    // });
+    // return;
 }));
-app.post("/chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const messages = req.body.messages;
-    const response = yield anthropic.messages.create({
-        messages: messages,
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 8000,
-        system: (0, prompts_1.getSystemPrompt)(),
-    });
-    console.log(response);
-    res.json({
-        response: (_a = response.content[0]) === null || _a === void 0 ? void 0 : _a.text,
-    });
-}));
+// app.post("/chat", async (req, res) => {
+//   const messages = req.body.messages;
+//   const response = await anthropic.messages.create({
+//     messages: messages,
+//     model: "claude-3-5-sonnet-20241022",
+//     max_tokens: 8000,
+//     system: getSystemPrompt(),
+//   });
+//   console.log(response);
+//   res.json({
+//     response: (response.content[0] as TextBlock)?.text,
+//   });
+// });
 app.listen(config_1.PORT, () => {
     console.log(`server started at ${config_1.PORT}`);
 });
